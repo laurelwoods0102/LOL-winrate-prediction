@@ -1,10 +1,7 @@
 import requests
 import time
-from datetime import timedelta
 import numpy as np
-import pandas as pd
 import json
-from pprint import pprint
 
 class GameResultCrawler():
     def __init__(self):
@@ -18,8 +15,6 @@ class GameResultCrawler():
             "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6,zh;q=0.5",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36"
         }
-        self.time_limit = timedelta(seconds=4)
-        self.totalGames = list()
         
 
         URL_id = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/laurelwoods"
@@ -33,8 +28,6 @@ class GameResultCrawler():
         
         matchlist = [mtc["gameId"] for mtc in res_matchlists.json()["matches"]]
 
-        self.totalGames.append(res_matchlists.json()["totalGames"])
-
         return matchlist
 
 
@@ -45,18 +38,17 @@ class GameResultCrawler():
 
         if res_match.status_code == 429:
             print("pending")
-            print(res_match.headers['Retry-After'])
             time.sleep(int(res_match.headers['Retry-After']))
 
             res_match = requests.get(URL_match, headers=self.headers)
             data = res_match.json()
 
 
-        myId = None
+        myId = None     # id to identify myPick in match
         queueId = data['queueId']       # 420 for Rank game
 
         participantIdentities = data['participantIdentities']
-        result = None
+        result = None       # win = 1
         for pi in participantIdentities:
             if pi['player']['summonerName'] == self.myName:
                 myId = pi['participantId']
@@ -80,17 +72,16 @@ class GameResultCrawler():
         dataset.append(result)
         dataset.append(myId)
         dataset.extend(champions)
-
         
         return dataset
 
+
+
 if __name__ == "__main__":
     crawler = GameResultCrawler()
-    print(crawler.accountId)
-    list_counter = 0
+    list_counter = 0        # matchlist counter
     matchlist = list()
     dataset = list()
-    match_omission = list()
     
     try:
         while True:        
@@ -98,18 +89,14 @@ if __name__ == "__main__":
             list_counter += 1
     except Exception as e:
         print(e)
-    finally:
-        print("Complete Matchlist")
 
     try:
-        for i, match in enumerate(matchlist):
+        for match in matchlist:
             try:
                 dataset.append(crawler.crawlMatch(match))
-                print(i)
             except Exception as e:
                 print("{0} : {1}".format(match, e))
     except Exception as e:
         print(e)
     finally:
         np.save('./dataset.npy', dataset)
-        print(crawler.totalGames)
