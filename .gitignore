@@ -1,0 +1,10 @@
+.vscode
+chromedriver_win32
+json/
+result/
+
+# outdated project files
+(outdated)*.*
+
+# files for example
+example*.*
