@@ -2,6 +2,7 @@
 chromedriver_win32
 json/
 result/
+documents/
 
 # outdated project files
 (outdated)*.*
