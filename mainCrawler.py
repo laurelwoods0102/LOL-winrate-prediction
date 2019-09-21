@@ -2,6 +2,7 @@ import requests
 import time
 import numpy as np
 import json
+import csv
 
 class GameResultCrawler():
     def __init__(self):
@@ -113,4 +114,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(e)
     finally:
-        np.save('./raw_dataset_{}.npy'.format(crawler.myName.replace(' ', '-')), dataset)
+        #np.save('./raw_dataset_{}.npy'.format(crawler.myName.replace(' ', '-')), dataset)
+        f = open('./result/raw_dataset_{}.csv'.format(crawler.myName.replace(' ', '-')), 'w', newline='')
+        writer = csv.writer(f)
+        for data in dataset: writer.writerow(data)
