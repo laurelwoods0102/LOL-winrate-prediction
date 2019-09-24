@@ -7,7 +7,7 @@ import csv
 class GameResultCrawler():
     def __init__(self):
         self.dataset = list()
-        self.apiKey = "RGAPI-c9181828-a8dd-4261-9af3-d185320704fd"
+        self.apiKey = "RGAPI-593e0a66-6d8d-440b-9fa6-c09d1091d2b7"
         self.myName = 'hide on bush'
         self.headers = {
             "Origin": "https://developer.riotgames.com",
@@ -46,7 +46,7 @@ class GameResultCrawler():
 
 
         myId = None     # id to identify myPick in match
-        queueId = data['queueId']       # 420 for Rank game
+        #queueId = data['queueId']       # 420 for Rank game
 
         participantIdentities = data['participantIdentities']
         result = None       # win = 1
@@ -115,6 +115,6 @@ if __name__ == "__main__":
         print(e)
     finally:
         #np.save('./raw_dataset_{}.npy'.format(crawler.myName.replace(' ', '-')), dataset)
-        f = open('./result/raw_dataset_{}.csv'.format(crawler.myName.replace(' ', '-')), 'w', newline='')
-        writer = csv.writer(f)
-        for data in dataset: writer.writerow(data)
+        with open('./result/raw_dataset_{}.csv'.format(crawler.myName.replace(' ', '-')), 'w', newline='') as f:
+            writer = csv.writer(f)
+            for data in dataset: writer.writerow(data)

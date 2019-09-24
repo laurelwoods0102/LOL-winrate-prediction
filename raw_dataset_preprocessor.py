@@ -2,6 +2,7 @@ import json
 import csv
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 ### dataset structure ###
 # dataset[0:144] : Champion picks 
@@ -46,11 +47,10 @@ for raw_data in raw_dataset:
         #print(mapping[str(data)])
         champion_picks[mapping[str(data)]] = 1
 
-    dataset.extend(champion_picks)
-    dataset.append(raw_data[0])     # result
+    dataset.extend(champion_picks)    
 
     myPickIndex = raw_data[1]
     dataset.append(mapping[str(raw_data[myPickIndex+1])])       # myPick
+    dataset.append(raw_data[0])     # result
 
-    writer.writerow(dataset)
-    
+    writer.writerow(dataset)    
