@@ -63,6 +63,30 @@ class LogisticModel(tf.keras.Model):
         x = self.w(input_features)
         return x
 
+def hypothesis(logit):
+    return tf.divide(1.0, 1.0 + tf.exp(-1.0*logit))
+
+def cost(logit_tensor, input_labels):
+    hypo = hypothesis(logit)
+    likelihood_y_0 = tf.matmul(input_labels, tf.math.log(hypo))
+    return -1.0*tf.reduce_mean(input_labels*tf.math.log(hypo) + (1.0-input_labels)*tf.math.log(1.0-hypo))
+
 model = LogisticModel()
+#optimizer = tf.keras.optimizer.Adam(learning_rate=0.01)
 for features, labels in train_dataset.take(1):
-    print(model.trainable_variables)
+    logit = model(features)
+    labels = tf.dtypes.cast(labels, tf.float32)
+    labels = tf.reshape(labels, [32, 1])
+    labels = tf.transpose(labels)
+
+    #print("hypothesis", hypothesis(logit))
+    print(cost(logit, labels))
+    '''
+    result = list()
+    for hypo in hypothesis(logit):
+        prediction = 0
+        if hypo[0] >= 0.5:
+            prediction = 1
+        result.append(prediction)
+    print(result)
+    '''
