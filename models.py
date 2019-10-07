@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow import keras
 
-df = pd.read_csv("./dataset/dataset_hide-on-bush_myPick_ex.csv")
+df = pd.read_csv("./dataset/dataset_hide-on-bush_enemy_ex.csv")
 df = df.astype(float)
 
 train_df, test_df = train_test_split(df, test_size=0.1)
@@ -57,32 +57,49 @@ for features, lables in train_dataset.take(1):
 class LogisticModel(tf.keras.Model):
     def __init__(self):
         super(LogisticModel, self).__init__()
-        self.w = LogisticLayer()
+        self.logistic_layer = LogisticLayer()
     
     def call(self, input_features, training=False):
-        x = self.w(input_features)
+        x = self.logistic_layer(input_features)
         return x
 
 def hypothesis(logit):
     return tf.divide(1.0, 1.0 + tf.exp(-1.0*logit))
 
 def cost(logit_tensor, input_labels):
-    hypo = hypothesis(logit)
-    likelihood_y_0 = tf.matmul(input_labels, tf.math.log(hypo))
-    return -1.0*tf.reduce_mean(input_labels*tf.math.log(hypo) + (1.0-input_labels)*tf.math.log(1.0-hypo))
+    hypo = hypothesis(logit_tensor)
+    #return -tf.reduce_mean(input_labels*tf.math.log(hypo) + (1.0-input_labels)*tf.math.log(1.0-hypo))
+    return -tf.reduce_mean(tf.math.log(hypo)*input_labels + tf.math.log(1.0-hypo)*(1.0-input_labels))
 
 def grad(model, features, labels):
     with tf.GradientTape() as tape:
         cost_value = cost(model(features), labels)
     return cost_value, tape.gradient(cost_value, model.trainable_variables)
 
+def train(model, features, labels, learning_rate=0.01):
+    with tf.GradientTape() as t:
+        current_cost = cost(model(features), labels)
+    dW = t.gradient(current_cost, [model.logistic_layer.w])
+    optimizer.apply_gradients(zip(dW, [model.logistic_layer.w]))
+    print("current cost :", current_cost)
+
 model = LogisticModel()
 optimizer = tf.optimizers.Adam(learning_rate=0.01)
 for features, labels in train_dataset.take(1):
-    logit = model(features)
+    #logit = model(features)
     labels = tf.dtypes.cast(labels, tf.float32)
     labels = tf.reshape(labels, [32, 1])
     labels = tf.transpose(labels)
+    #cost_value = cost(logit, labels)
+
+    #print("Logit : ", logit)
+
+    #print("initial_cost :", cost_value)
 
     #cost_value, grads = grad(model, features, labels)
-    optimizer.minimize(cost(model(features), labels), model.trainable_variables)
+    #optimizer.minimize(cost(model(features), labels), model.logistic_layer.w)
+    train(model, features, labels)
+    re_logit = model(features, labels)
+    re_cost = cost(re_logit, labels)
+    print("re_cost : ", re_cost)
+    #print(model.logistic_layer.w)

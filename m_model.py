@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow import keras
 
-df = pd.read_csv("./dataset/dataset_hide-on-bush_myPick_ex.csv")
+df = pd.read_csv("./dataset/dataset_hide-on-bush_enemy_ex.csv")
 
 train_df, test_df = train_test_split(df, test_size=0.1)
 train_df, val_df = train_test_split(train_df, test_size=0.1)
