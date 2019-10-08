@@ -64,6 +64,7 @@ def train(model, features, labels):
     #print("current W : ", model.logistic_layer.w)
     optimizer.apply_gradients(zip(dW, [model.logistic_layer.w]))
     #print("trained W : ", model.logistic_layer.w)    
+    
     return current_cost
 
 def batch_accuracy(hypos, labels, batch_size=32):
@@ -106,12 +107,14 @@ if __name__ == "__main__":
 
     f = open('./model_results/version_1/cost.csv', 'w', newline='')
     w = open('./model_results/version_1/weights.csv', 'w', newline='')
+    accu = open('./model_results/version_1/accuracy.txt', 'w')
+    cost_record = open('./model_results/version_1/cost.txt', 'w')
 
     Ws = list()
     train_cost_results = list()
     train_accuracy_results = list()
 
-    epochs = range(10)
+    epochs = range(25)
     for epoch in epochs:
         print('epoch : ', epoch)
         temp_accuracy = list()
@@ -121,21 +124,20 @@ if __name__ == "__main__":
             labels = tf.reshape(labels, [32, 1])
             labels = tf.transpose(labels)
 
-            #current_cost = cost(model(features), labels)
             current_cost = train(model, features, labels)
 
             logits = model(features)
             hypos = hypothesis(logits)
 
             accuracy = batch_accuracy(tf.reshape(hypos, [1, 32]).numpy()[0], labels.numpy()[0])
-            print("accuracy : ", accuracy)
+            
+            accu.write(str(accuracy))
+            accu.write("\n")
+            cost_record.write(str(current_cost.numpy()))
+            cost_record.write("\n")
 
             temp_accuracy.append(accuracy)
             temp_cost.append(current_cost.numpy())
         
         train_accuracy_results.extend(temp_accuracy)
         train_cost_results.extend(temp_cost)
-
-    plt.plot(train_accuracy_results)
-    plt.plot(train_cost_results)
-    plt.show()
