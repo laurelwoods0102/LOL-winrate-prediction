@@ -51,7 +51,6 @@ def cost(logits, labels):
     #return -tf.reduce_mean(labels*tf.math.log(hypo) + (1.0-labels)*tf.math.log(1.0-hypo))
     return -tf.reduce_mean(tf.math.log(hypo)*labels + tf.math.log(1.0-hypo)*(1.0-labels))
 
-#def grad(model, features, labels):
 def grad(logits, labels):
     with tf.GradientTape() as tape:
         cost_value = cost(model(features), labels)
@@ -79,10 +78,22 @@ def batch_accuracy(hypos, labels, batch_size=32):
         #print(hypo, " => ", prediction, " : ", label)
     return accuracy/batch_size
 
-
-
 if __name__ == "__main__":
-    df = pd.read_csv("./dataset/dataset_hide-on-bush_enemy_ex.csv")
+    df = pd.read_csv("./dataset/dataset_hide-on-bush_enemy.csv")
+    df = df.astype(float)
+    df = df.sample(frac=1).reset_index(drop=True)   # shuffle
+    
+    train_len, test_len = divmod(len(df), 32)
+    if test_len == 0:
+        train_len -= 32
+        test_len = 32
+    
+    
+    
+
+'''
+if __name__ == "__main__":
+    df = pd.read_csv("./dataset/dataset_hide-on-bush_enemy.csv")
     df = df.astype(float)
 
     train_df, test_df = train_test_split(df, test_size=0.1)
@@ -141,3 +152,4 @@ if __name__ == "__main__":
         
         train_accuracy_results.extend(temp_accuracy)
         train_cost_results.extend(temp_cost)
+'''
