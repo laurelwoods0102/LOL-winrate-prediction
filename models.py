@@ -53,7 +53,8 @@ class LogisticModel(tf.keras.Model):
     def __init__(self):
         super(LogisticModel, self).__init__()
         self.logistic_layer = LogisticLayer()
-    
+
+    @tf.function
     def call(self, features, training=False):
         x = self.logistic_layer(features)
         return x
@@ -165,4 +166,6 @@ if __name__ == "__main__":
         current_cost = train(model, features, labels)
         costs.append(current_cost.numpy())
     
-    
+    call = model.call.get_concrete_function(tf.TensorSpec(None, tf.float32))
+    tf.saved_model.save(model, "./trained_model/", signatures=call)
+    print(costs)
