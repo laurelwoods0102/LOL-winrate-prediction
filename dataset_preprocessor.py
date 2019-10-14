@@ -37,14 +37,14 @@ class dataset_preprocessor:
 
         for raw_data in self.history:              
             if int(raw_data[1]) <= 5:
-                myTeam_index = {"begin": 2, "end": 7}
+                team_index = {"begin": 2, "end": 7}
                 enemy_index = {"begin": 7, "end": 13}
             else:
-                myTeam_index = {"begin": 7, "end": 13}
+                team_index = {"begin": 7, "end": 13}
                 enemy_index = {"begin": 2, "end": 7}
             
             #self.worker(raw_data, "myPick", dataset["myPick"], {"begin": int(raw_data[1])+1, "end": int(raw_data[1])+2})
-            self.worker(raw_data, "myTeam", dataset["myTeam"], myTeam_index)
+            self.worker(raw_data, "team", dataset["team"], team_index)
             self.worker(raw_data, "enemy", dataset["enemy"], enemy_index)
 
         for d_set in dataset.items():

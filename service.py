@@ -8,16 +8,35 @@ from collections import defaultdict
 import tensorflow as tf
 from tensorflow import keras
 
-loaded = tf.saved_model.load("./trained_model/")
-print(list(loaded.signatures.keys()))
 
-df = pd.read_csv("./dataset/test.csv")
-df = df.astype(float)
-df = df.sample(frac=1).reset_index(drop=True)
+weights = np.load('./trained_model/weights.npy')
 
-response = df.pop('y')
-print(response.values)
+class LogisticLayer(keras.layers.Layer):
+    def __init__(self):
+        super(LogisticLayer, self).__init__()
+        self.w = tf.convert_to_tensor(weights)
 
-for d in df.values:
-    print(loaded.signatures['serving_default'](tf.convert_to_tensor(d)))
-    break
+    @tf.function
+    def call(self, features):
+        return tf.matmul(features, self.w)
+
+class LogisticModel(tf.keras.Model):
+    def __init__(self):
+        super(LogisticModel, self).__init__()
+        self.logistic_layer = LogisticLayer()    #input shape = 146, 4
+
+    @tf.function
+    def call(self, features, training=False):
+        x = self.logistic_layer(features)
+        return x
+
+def hypothesis(logit):
+    return tf.divide(1.0, 1.0 + tf.exp(-1.0*logit))
+
+if __name__ == "__main__":
+    data = np.array([[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0]], dtype='f')
+
+    model = LogisticModel()
+    logit = model(tf.convert_to_tensor(data))
+    print(logit)
+    print(hypothesis(logit).numpy()[0][0])
