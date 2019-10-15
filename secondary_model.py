@@ -25,18 +25,21 @@ def pack_features_vector(features, labels):
     return features, labels
 
 class LogisticLayer(keras.layers.Layer):
-    def __init__(self, weights):
+    def __init__(self, input_shape, num_outputs=1):
         super(LogisticLayer, self).__init__()
-        self.w = tf.convert_to_tensor(weights)
+        w_init = tf.initializers.GlorotUniform()     # NOTICE : weight matrix itself contains bias
+        self.w = tf.Variable(
+            initial_value=w_init(shape=(input_shape, num_outputs), dtype='float32'),
+            trainable=True)
 
     @tf.function
     def call(self, features):
         return tf.matmul(features, self.w)
 
 class LogisticModel(tf.keras.Model):
-    def __init__(self, weights):
+    def __init__(self, input_shape):
         super(LogisticModel, self).__init__()
-        self.logistic_layer = LogisticLayer(weights)    #input shape = 146, 4
+        self.logistic_layer = LogisticLayer(input_shape)    #input shape = 146, 4
 
     @tf.function
     def call(self, features, training=False):
@@ -78,24 +81,27 @@ if __name__ == "__main__":
 
     df_team = pd.read_csv("./dataset/secondary/dataset_2_{0}_team.csv".format(name))
     df_enemy = pd.read_csv("./dataset/secondary/dataset_2_{0}_enemy.csv".format(name))
+    df_average = pd.read_csv("./dataset/secondary/dataset_{0}_average.csv".format(name))
     df_response = pd.read_csv("./dataset/secondary/dataset_2_{0}_response.csv".format(name))
-    df_average = pd.read_csv("./dataset/dataset_{0}_average.csv".format(name))
 
-    bias = np.array([[1 for i in range(1088)]], dtype='f8')
+    bias = np.array([[float(1) for i in range(1088)]], dtype='f8')
     bias = pd.DataFrame(bias.T, columns=["bias"])
-    print(bias)
     
-    train_df = pd.concat([bias, df_team, df_enemy, df_response], axis=1)
-    #train_ds = df_to_dataset(train_df, df_response)
+    train_df = pd.concat([bias, df_average, df_team, df_enemy, df_response], axis=1)
+    #train_ds = df_to_dataset(train_df)
     #train_dataset = train_ds.map(pack_features_vector)
-
+    '''
+    for f, l in train_dataset.take(1):
+        print(f)
+        print(l)
+    '''
     models = list()
     train_cost = list()
     val_accuracy = list()
 
     kf = KFold(n_splits=34)
     for train_index, val_index in kf.split(train_df):
-        model = LogisticModel(3)
+        model = LogisticModel(4)
 
         train_ds = df_to_dataset(train_df.iloc[train_index])
         train_dataset = train_ds.map(pack_features_vector)
@@ -116,8 +122,8 @@ if __name__ == "__main__":
 
     tc = np.array([train_cost])
     tc_df = pd.DataFrame(tc.T, columns=["train_cost"])
-    tc_df.to_csv("./model_results/{0}_secondary_train_cost.csv".format(name))
+    tc_df.to_csv("./model_results/{0}_secondary_train_cost.csv".format(name), index=False)
 
     va = np.array([val_accuracy])
     va_df = pd.DataFrame(va.T, columns=["val_accuracy"])
-    va_df.to_csv("./model_results/{0}_secondary_validation_accuracy.csv".format(name))
+    va_df.to_csv("./model_results/{0}_secondary_validation_accuracy.csv".format(name), index=False)

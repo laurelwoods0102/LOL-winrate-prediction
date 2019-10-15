@@ -1,6 +1,7 @@
 import json
 import csv
 import numpy as np
+import pandas as pd
 from collections import defaultdict
 
 class dataset_preprocessor:
@@ -63,7 +64,7 @@ class dataset_preprocessor:
         temp_total = [0 for i in range(145)]
         temp_win = [0 for i in range(145)]
         for data in self.history:
-            raw_myPick = data[int(data[1])]
+            raw_myPick = data[int(data[1])+1]
             mapped_myPick = self.map[raw_myPick]
 
             temp_total[int(mapped_myPick)] += 1
@@ -76,15 +77,34 @@ class dataset_preprocessor:
                 continue
             dataset_my_average[i] = temp_win[i]/temp_total[i]
         
-        with open('./dataset/dataset_{0}_average.csv'.format(self.name), 'w', newline='') as f:
-            writer = csv.writer(f)
-            columns = ['c' + str(i) for i in range(145)]
-            writer.writerow(columns)
-            writer.writerow(dataset_my_average)
+        ds_my_average = np.array([dataset_my_average])
+        df_my_average = pd.DataFrame(ds_my_average.T, columns=["average"])
+        df_my_average.to_csv('./dataset/secondary/{0}_average_table.csv'.format(self.name), index=False)
+    
+    def my_average_tracking(self):
+        my_picks = list()
+        for data in self.history:
+            raw_myPick = data[int(data[1])+1]
+            mapped_myPick = self.map[raw_myPick]
+            my_picks.append(mapped_myPick)
+        trackings = np.array([my_picks])
+        tracked_dataset = pd.DataFrame(trackings.T, columns=["my_picks"])
+        tracked_dataset.to_csv("./dataset/secondary/my_picks.csv", index=False)
 
+    def my_average_mapping(self):
+        average = pd.read_csv("./dataset/secondary/hide-on-bush_average_table.csv")
+        tracking = pd.read_csv("./dataset/secondary/my_picks.csv")
+        ds = list()
 
+        for t in tracking.values.flatten():
+            ds.append(average.values.flatten()[t])
+        
+        dataset = np.array([ds])
+        df = pd.DataFrame(dataset.T, columns=["average_dataset"])
+        df.to_csv("./dataset/secondary/dataset_hide-on-bush_average.csv", index=False)        
 
 if __name__ == "__main__":
     preprocessor = dataset_preprocessor("hide on bush")
-    preprocessor.processor()
-    preprocessor.my_average()
+    #preprocessor.processor()
+    #preprocessor.my_average()
+    preprocessor.my_average_tracking()
