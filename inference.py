@@ -13,4 +13,4 @@ def weight_sort(name, model_type):
     print(df_sorted)
 
 if __name__ == "__main__":
-    weight_sort("hide on bush", "team")
+    weight_sort("hide on bush", "enemy")

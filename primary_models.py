@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
@@ -27,16 +27,6 @@ def pack_features_vector(features, labels):
     labels = tf.transpose(labels)
 
     return features, labels
-
-def input_to_dataset(dataframe):
-    response = dataframe.pop('y')
-    dataset = tf.data.Dataset.from_tensor_slices((dict(dataframe), response.values))
-
-    def input_pack_features_vector(features, labels):
-        features = tf.stack(list(features.values()), axis=1)
-    dataset = dataset.map(input_pack_features_vector)
-
-    return dataset
 
 class LogisticLayer(keras.layers.Layer):
     def __init__(self, input_shape, num_outputs=1):
@@ -68,13 +58,6 @@ def hypothesis(logit):
 def cost(logits, labels):
     hypo = hypothesis(logits)
     return -tf.reduce_mean(tf.math.log(hypo)*labels + tf.math.log(1.0-hypo)*(1.0-labels))
-
-#def grad(logits, labels):
-def grad(model, logits, labels):
-    with tf.GradientTape() as tape:
-        #cost_value = cost(model(features), labels)
-        cost_value = cost(logits, labels)
-    return cost_value, tape.gradient(cost_value, model.trainable_variables)
 
 def train(model, features, labels):
     with tf.GradientTape() as t:
@@ -175,5 +158,5 @@ def processor(name, model_type):
     np.save('./trained_model/weights_{0}_{1}.npy'.format(name.replace(' ', '-'), model_type), weights)
 
 if __name__ == "__main__":
-    KFoldValidation("hide on bush", "team")
-    processor("hide on bush", "team")
+    KFoldValidation("hide on bush", "enemy")
+    processor("hide on bush", "enemy")
