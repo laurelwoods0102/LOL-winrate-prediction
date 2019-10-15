@@ -1,9 +1,6 @@
-import csv
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
-import matplotlib.pyplot as plt
-from collections import defaultdict
 
 import tensorflow as tf
 from tensorflow import keras
@@ -43,7 +40,7 @@ class LogisticLayer(keras.layers.Layer):
 class LogisticModel(tf.keras.Model):
     def __init__(self, input_shape):
         super(LogisticModel, self).__init__()
-        self.logistic_layer = LogisticLayer(input_shape)    #input shape = 146, 4
+        self.logistic_layer = LogisticLayer(input_shape)    #input shape = 146, 1
 
     @tf.function
     def call(self, features, training=False):
@@ -80,7 +77,7 @@ def batch_accuracy(hypos, labels, batch_size=32):
 
 
 def KFoldValidation(name, model_type):
-    df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name.replace(' ', '-'), model_type))
+    df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name, model_type))
     df = df.astype(float)
     df = df.sample(frac=1).reset_index(drop=True)   # shuffle
 
@@ -119,19 +116,18 @@ def KFoldValidation(name, model_type):
         
         models.append(model)
     
-    with open('./model_results/{0}_{1}_train_cost.txt'.format(name.replace(' ', '-'), model_type), 'w') as f:
+    with open('./model_results/{0}_{1}_train_cost.txt'.format(name, model_type), 'w') as f:
         for tc in train_cost:
             f.write(str(tc))
             f.write('\n')
 
-    with open('./model_results/{0}_{1}_validation_accuracy.txt'.format(name.replace(' ', '-'), model_type), 'w') as g:
+    with open('./model_results/{0}_{1}_validation_accuracy.txt'.format(name, model_type), 'w') as g:
         for va in val_accuracy:
             g.write(str(va))
             g.write('\n')
 
 def processor(name, model_type):
-    df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name.replace(' ', '-'), model_type))
-    df = df.astype(float)
+    df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name, model_type))
     df = df.sample(frac=1).reset_index(drop=True)   # shuffle
     
     batch_size = 32
@@ -155,8 +151,9 @@ def processor(name, model_type):
         costs.append(current_cost.numpy())
     
     weights = model.logistic_layer.w.numpy()
-    np.save('./trained_model/weights_{0}_{1}.npy'.format(name.replace(' ', '-'), model_type), weights)
+    np.save('./trained_model/weights_{0}_{1}.npy'.format(name, model_type), weights)
 
 if __name__ == "__main__":
-    KFoldValidation("hide on bush", "enemy")
-    processor("hide on bush", "enemy")
+    name = "temp".replace(' ', '-')
+    KFoldValidation("temp", "team")
+    processor("temp", "team")

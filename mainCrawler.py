@@ -1,14 +1,12 @@
 import requests
 import time
-import numpy as np
 import json
-import csv
 
 class GameResultCrawler():
     def __init__(self, name):
         self.dataset = list()
-        self.apiKey = "RGAPI-44189125-9503-474a-93c0-61f22a3ddbdf"
-        self.myName = name
+        self.apiKey = "RGAPI-ba7cdcd4-c9de-416a-9eac-bd6379b86a2a"
+        self.myName = name.replace(' ', '-')
         self.headers = {
             "Origin": "https://developer.riotgames.com",
             "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -16,12 +14,12 @@ class GameResultCrawler():
             "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6,zh;q=0.5",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36"
         }
-        URL_id = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/{}".format(self.myName)
+        URL_id = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/{}".format(name)
         res_id = requests.get(URL_id, headers=self.headers)
         self.accountId = res_id.json()['accountId']
 
     def crawlMatchlists(self, counter, season, queue=420): # queue=420 for Rank game
-        URL_matchlists = "https://kr.api.riotgames.com/lol/match/v4/matchlists/by-account/{0}?season={1}&endIndex={2}&beginIndex={3}".format(self.accountId, season, (counter+1)*100+1, counter*100+1)
+        URL_matchlists = "https://kr.api.riotgames.com/lol/match/v4/matchlists/by-account/{0}?queue={1}&season={2}&endIndex={3}&beginIndex={4}".format(self.accountId, queue, season, (counter+1)*100+1, counter*100+1)
         res_matchlists = requests.get(URL_matchlists, headers=self.headers)
         
         matchlist = [mtc["gameId"] for mtc in res_matchlists.json()["matches"]]
@@ -40,13 +38,13 @@ class GameResultCrawler():
             res_match = requests.get(URL_match, headers=self.headers)
             data = res_match.json()
 
-        myId = None     # id to identify myPick in match
+        myPick = None     # id to identify myPick in match
 
         participantIdentities = data['participantIdentities']
         result = None       # win = 1
         for pi in participantIdentities:
             if pi['player']['accountId'] == self.accountId:
-                myId = pi['participantId']
+                myPick = pi['participantId']
                 if pi['participantId'] <= 5:
                     if data['teams'][0]['win'] == 'Win': result = 1
                     else:  result = 0
@@ -59,11 +57,12 @@ class GameResultCrawler():
         for ptc in participants:
             champions.append(ptc['championId'])
 
-        # win, myId, [picks1~10]
+        # [picks1~10], result, myPick
         dataset = list()
+        dataset.extend(champions)
         dataset.append(result)
-        dataset.append(myId)
-        dataset.extend(champions)        
+        dataset.append(myPick)
+
         
         return dataset
 
@@ -73,7 +72,7 @@ class GameResultCrawler():
         dataset = list()
 
         if exist_matchlist:
-            m = open('./result/matchlist_{}.json'.format(self.myName.replace(' ', '-')), 'r')
+            m = open('./history/matchlist_{}.json'.format(self.myName), 'r')
             matchlist = json.load(m)
         else:
             list_counter = 0        # matchlist counter
@@ -86,7 +85,7 @@ class GameResultCrawler():
                 print(e)
             finally:
                 print("Complete collecting Matchlist")
-                with open('./result/matchlist_{}.json'.format(self.myName.replace(' ', '-')), 'w') as mt:
+                with open('./history/matchlist_{}.json'.format(self.myName), 'w') as mt:
                     json.dump(matchlist, mt, indent=4)
 
         try:
@@ -101,11 +100,8 @@ class GameResultCrawler():
         except Exception as e:
             print(e)
         finally:
-            with open('./history/history_{}.csv'.format(self.myName.replace(' ', '-')), 'w', newline='') as f:
-                writer = csv.writer(f)
-                for data in dataset: writer.writerow(data)
-
-
+            with open('./history/history_{}.json'.format(self.myName), 'w') as f:
+                json.dump(dataset, f, indent=4)
 
 
 if __name__ == "__main__":

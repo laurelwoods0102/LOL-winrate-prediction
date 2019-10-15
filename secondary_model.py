@@ -1,9 +1,6 @@
-import csv
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
-import matplotlib.pyplot as plt
-from collections import defaultdict
 
 import tensorflow as tf
 from tensorflow import keras
@@ -75,26 +72,17 @@ def batch_accuracy(hypos, labels, batch_size=32):
     return accuracy/batch_size
 
 
-if __name__ == "__main__":
-    name = "hide on bush"
-    name = name.replace(" ", "-")
-
-    df_team = pd.read_csv("./dataset/secondary/dataset_2_{0}_team.csv".format(name))
-    df_enemy = pd.read_csv("./dataset/secondary/dataset_2_{0}_enemy.csv".format(name))
+def KFoldValidation(name):
+    df_team = pd.read_csv("./dataset/secondary/dataset_{0}_team.csv".format(name))
+    df_enemy = pd.read_csv("./dataset/secondary/dataset_{0}_enemy.csv".format(name))
     df_average = pd.read_csv("./dataset/secondary/dataset_{0}_average.csv".format(name))
-    df_response = pd.read_csv("./dataset/secondary/dataset_2_{0}_response.csv".format(name))
+    df_response = pd.read_csv("./dataset/secondary/dataset_{0}_response.csv".format(name))
 
-    bias = np.array([[float(1) for i in range(1088)]], dtype='f8')
+    bias = np.array([[float(1) for i in range(1088)]], dtype='f4')
     bias = pd.DataFrame(bias.T, columns=["bias"])
     
     train_df = pd.concat([bias, df_average, df_team, df_enemy, df_response], axis=1)
-    #train_ds = df_to_dataset(train_df)
-    #train_dataset = train_ds.map(pack_features_vector)
-    '''
-    for f, l in train_dataset.take(1):
-        print(f)
-        print(l)
-    '''
+
     models = list()
     train_cost = list()
     val_accuracy = list()
@@ -127,3 +115,43 @@ if __name__ == "__main__":
     va = np.array([val_accuracy])
     va_df = pd.DataFrame(va.T, columns=["val_accuracy"])
     va_df.to_csv("./model_results/{0}_secondary_validation_accuracy.csv".format(name), index=False)
+
+def processor(name):
+    df_team = pd.read_csv("./dataset/secondary/dataset_2_{0}_team.csv".format(name))
+    df_enemy = pd.read_csv("./dataset/secondary/dataset_2_{0}_enemy.csv".format(name))
+    df_average = pd.read_csv("./dataset/secondary/dataset_{0}_average.csv".format(name))
+    df_response = pd.read_csv("./dataset/secondary/dataset_2_{0}_response.csv".format(name))
+
+    bias = np.array([[float(1) for i in range(1088)]], dtype='f8')
+    bias = pd.DataFrame(bias.T, columns=["bias"])
+    
+    df = pd.concat([bias, df_average, df_team, df_enemy, df_response], axis=1)
+
+    batch_size = 32
+
+    train_len, test_size = divmod(len(df), batch_size)
+    if test_size == 0:
+        train_len -= 1
+        test_size = batch_size
+
+    train_df = df.loc[:train_len*batch_size-1]
+    test_df = df.loc[train_len*batch_size-1:]
+
+    train_ds = df_to_dataset(train_df)
+    train_dataset = train_ds.map(pack_features_vector)
+
+    model = LogisticModel(146)
+    
+    costs = list()
+    for features, labels in train_dataset:
+        current_cost = train(model, features, labels)
+        costs.append(current_cost.numpy())
+    
+    weights = model.logistic_layer.w.numpy()
+    np.save('./trained_model/weights_secondary_{0}.npy'.format(name), weights)
+
+if __name__ == "__main__":
+    name = "temp"
+    name = name.replace(" ", "-")
+    #KFoldValidation(name)
+    processor(name)
