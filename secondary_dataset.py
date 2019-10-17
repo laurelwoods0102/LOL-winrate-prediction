@@ -72,6 +72,6 @@ def processor(name, model_type):
 
 
 if __name__ == "__main__":
-    name = "temp".replace(' ', '-')
-    #processor(name, "team")
-    average_dataset(name)
+    name = "hide on bush".replace(' ', '-')
+    processor(name, "enemy")
+    #average_dataset(name)

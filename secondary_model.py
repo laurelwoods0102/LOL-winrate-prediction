@@ -15,7 +15,6 @@ def df_to_dataset(dataframe, batch_size=32):
 def pack_features_vector(features, labels):
     features = tf.stack(list(features.values()), axis=1)
 
-    labels = tf.dtypes.cast(labels, tf.float32) # reshape Labels
     labels = tf.reshape(labels, [32, 1])
     labels = tf.transpose(labels)
 
@@ -82,6 +81,8 @@ def KFoldValidation(name):
     bias = pd.DataFrame(bias.T, columns=["bias"])
     
     train_df = pd.concat([bias, df_average, df_team, df_enemy, df_response], axis=1)
+    train_df.astype('float32')
+    print(train_df)
 
     models = list()
     train_cost = list()
@@ -151,7 +152,6 @@ def processor(name):
     np.save('./trained_model/weights_secondary_{0}.npy'.format(name), weights)
 
 if __name__ == "__main__":
-    name = "temp"
-    name = name.replace(" ", "-")
-    #KFoldValidation(name)
-    processor(name)
+    name = "hide on bush".replace(" ", "-")
+    KFoldValidation(name)
+    #processor(name)

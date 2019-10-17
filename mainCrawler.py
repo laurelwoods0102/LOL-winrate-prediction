@@ -5,7 +5,7 @@ import json
 class GameResultCrawler():
     def __init__(self, name):
         self.dataset = list()
-        self.apiKey = "RGAPI-ba7cdcd4-c9de-416a-9eac-bd6379b86a2a"
+        self.apiKey = "RGAPI-27f494d3-1248-4d0c-a7f6-3c64b4e3ac4d"
         self.myName = name.replace(' ', '-')
         self.headers = {
             "Origin": "https://developer.riotgames.com",

@@ -12,14 +12,17 @@ def df_to_dataset(dataframe, batch_size=32):
 
     #if shuffle:
         #dataset = dataset.shuffle(buffer_size=len(dataframe))
-    dataset = dataset.batch(batch_size)
+    if batch_size:
+        dataset = dataset.batch(batch_size)
 
     return dataset
 
 def pack_features_vector(features, labels):
     features = tf.stack(list(features.values()), axis=1)
 
-    labels = tf.dtypes.cast(labels, tf.float32) # reshape Labels
+    return features, labels
+
+def pack_labels_vector(features, labels):
     labels = tf.reshape(labels, [32, 1])
     labels = tf.transpose(labels)
 
@@ -78,8 +81,8 @@ def batch_accuracy(hypos, labels, batch_size=32):
 
 def KFoldValidation(name, model_type):
     df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name, model_type))
-    df = df.astype(float)
     df = df.sample(frac=1).reset_index(drop=True)   # shuffle
+    df = df.astype('float32')
 
     batch_size = 32
 
@@ -111,7 +114,7 @@ def KFoldValidation(name, model_type):
             logits = model(features)
             hypos = hypothesis(logits)
             
-            accuracy = batch_accuracy(tf.reshape(hypos, [1, 32]).numpy()[0], labels.numpy()[0])
+            accuracy = batch_accuracy(tf.reshape(hypos, [1, 32]).numpy()[0], labels.numpy())
             val_accuracy.append(accuracy)
         
         models.append(model)
@@ -129,6 +132,7 @@ def KFoldValidation(name, model_type):
 def processor(name, model_type):
     df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name, model_type))
     df = df.sample(frac=1).reset_index(drop=True)   # shuffle
+    df = df.astype('float32')
     
     batch_size = 32
 
@@ -142,18 +146,39 @@ def processor(name, model_type):
 
     train_ds = df_to_dataset(train_df)
     train_dataset = train_ds.map(pack_features_vector)
+    #train_dataset = train_ds.map(pack_labels_vector)
 
+    test_response = test_df.pop('y')
+    test_dataset = zip(test_df.values, test_response.values)
+
+ 
     model = LogisticModel(146)
     
     costs = list()
     for features, labels in train_dataset:
         current_cost = train(model, features, labels)
         costs.append(current_cost.numpy())
+
+    test_hypos = list()
+    test_labels = list()
+
+    for features, label in test_dataset:
+        features = tf.convert_to_tensor([features])
+        logit = model(features)
+        hypo = hypothesis(logit)
+
+        test_hypos.append(hypo)
+        test_labels.append(label) 
+    
+    test_accuracy = batch_accuracy(test_hypos, test_labels, batch_size=len(test_hypos))
+    print("test accuracy : ", test_accuracy)
+
+    test_df.to_csv("./model_results/{0}_{1}_test_dataset.csv".format(name, model_type), index=False)
     
     weights = model.logistic_layer.w.numpy()
     np.save('./trained_model/weights_{0}_{1}.npy'.format(name, model_type), weights)
-
+    
 if __name__ == "__main__":
-    name = "temp".replace(' ', '-')
-    KFoldValidation("temp", "team")
-    processor("temp", "team")
+    name = "hide on bush".replace(' ', '-')
+    KFoldValidation(name, "enemy")
+    processor(name, "enemy")

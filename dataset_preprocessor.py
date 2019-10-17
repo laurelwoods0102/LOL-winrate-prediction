@@ -54,10 +54,10 @@ class preprocessor:
         with open("./dataset/dataset_{0}_{1}.json".format(self.name, "my_picks"), 'w') as j:
             json.dump(dataframe["myPicks"], j, indent=4)
 
-        dataset_team = np.array(dataframe["team"], dtype='f4')
+        dataset_team = np.array(dataframe["team"], dtype=np.float32)
         dataset_team = pd.DataFrame(dataset_team, columns=self.columns)
 
-        dataset_enemy = np.array(dataframe["enemy"], dtype='f4')
+        dataset_enemy = np.array(dataframe["enemy"], dtype=np.float32)
         dataset_enemy = pd.DataFrame(dataset_enemy, columns=self.columns)
 
         dataset_team.to_csv("./dataset/dataset_{0}_{1}.csv".format(self.name, "team"), index=False)
@@ -65,5 +65,5 @@ class preprocessor:
 
 
 if __name__ == "__main__":
-    preprocessor = preprocessor("temp")
+    preprocessor = preprocessor("hide on bush")
     preprocessor.processor()
