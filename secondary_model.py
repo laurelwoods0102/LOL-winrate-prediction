@@ -25,7 +25,7 @@ class LogisticLayer(keras.layers.Layer):
         super(LogisticLayer, self).__init__()
         w_init = tf.initializers.GlorotUniform()     # NOTICE : weight matrix itself contains bias
         self.w = tf.Variable(
-            initial_value=w_init(shape=(input_shape, num_outputs), dtype='float32'),
+            initial_value=w_init(shape=(input_shape, num_outputs), dtype=tf.float32),
             trainable=True)
 
     @tf.function
@@ -72,23 +72,31 @@ def batch_accuracy(hypos, labels, batch_size=32):
 
 
 def KFoldValidation(name):
-    df_team = pd.read_csv("./dataset/secondary/dataset_{0}_team.csv".format(name))
-    df_enemy = pd.read_csv("./dataset/secondary/dataset_{0}_enemy.csv".format(name))
-    df_average = pd.read_csv("./dataset/secondary/dataset_{0}_average.csv".format(name))
-    df_response = pd.read_csv("./dataset/secondary/dataset_{0}_response.csv".format(name))
+    df_team = pd.read_csv("./dataset/secondary/dataset_{0}_team.csv".format(name), dtype='float32')
+    df_enemy = pd.read_csv("./dataset/secondary/dataset_{0}_enemy.csv".format(name), dtype='float32')
+    df_average = pd.read_csv("./dataset/secondary/dataset_{0}_average.csv".format(name), dtype='float32')
+    df_response = pd.read_csv("./dataset/secondary/dataset_{0}_response.csv".format(name), dtype='float32')
 
-    bias = np.array([[float(1) for i in range(1088)]], dtype='f4')
+    bias = np.array([[float(1) for i in range(len(df_response))]], dtype='f4')
     bias = pd.DataFrame(bias.T, columns=["bias"])
     
-    train_df = pd.concat([bias, df_average, df_team, df_enemy, df_response], axis=1)
-    train_df.astype('float32')
-    print(train_df)
+    df = pd.concat([bias, df_average, df_team, df_enemy, df_response], axis=1)
+
+    batch_size = 32
+
+    train_len, test_size = divmod(len(df), batch_size)
+    if test_size == 0:
+        train_len -= 1
+        test_size = batch_size
+
+    train_df = df.loc[:train_len*batch_size-1]
+    test_df = df.loc[train_len*batch_size-1:]
 
     models = list()
     train_cost = list()
     val_accuracy = list()
 
-    kf = KFold(n_splits=34)
+    kf = KFold(n_splits=train_len)
     for train_index, val_index in kf.split(train_df):
         model = LogisticModel(4)
 
@@ -118,12 +126,12 @@ def KFoldValidation(name):
     va_df.to_csv("./model_results/{0}_secondary_validation_accuracy.csv".format(name), index=False)
 
 def processor(name):
-    df_team = pd.read_csv("./dataset/secondary/dataset_2_{0}_team.csv".format(name))
-    df_enemy = pd.read_csv("./dataset/secondary/dataset_2_{0}_enemy.csv".format(name))
-    df_average = pd.read_csv("./dataset/secondary/dataset_{0}_average.csv".format(name))
-    df_response = pd.read_csv("./dataset/secondary/dataset_2_{0}_response.csv".format(name))
+    df_team = pd.read_csv("./dataset/secondary/dataset_{0}_team.csv".format(name), dtype='float32')
+    df_enemy = pd.read_csv("./dataset/secondary/dataset_{0}_enemy.csv".format(name), dtype='float32')
+    df_average = pd.read_csv("./dataset/secondary/dataset_{0}_average.csv".format(name), dtype='float32')
+    df_response = pd.read_csv("./dataset/secondary/dataset_{0}_response.csv".format(name), dtype='float32')
 
-    bias = np.array([[float(1) for i in range(1088)]], dtype='f8')
+    bias = np.array([[float(1) for i in range(len(df_response))]], dtype='f4')
     bias = pd.DataFrame(bias.T, columns=["bias"])
     
     df = pd.concat([bias, df_average, df_team, df_enemy, df_response], axis=1)
@@ -141,17 +149,36 @@ def processor(name):
     train_ds = df_to_dataset(train_df)
     train_dataset = train_ds.map(pack_features_vector)
 
-    model = LogisticModel(146)
+    test_response = test_df.pop('y')
+    test_dataset = zip(test_df.values, test_response.values)
+
+    model = LogisticModel(4)
     
     costs = list()
     for features, labels in train_dataset:
         current_cost = train(model, features, labels)
         costs.append(current_cost.numpy())
+
+    test_hypos = list()
+    test_labels = list()
+
+    for features, label in test_dataset:
+        features = tf.convert_to_tensor([features])
+        logit = model(features)
+        hypo = hypothesis(logit)
+
+        test_hypos.append(hypo)
+        test_labels.append(label) 
     
+    test_accuracy = batch_accuracy(test_hypos, test_labels, batch_size=len(test_hypos))
+    print("test accuracy : ", test_accuracy)
+
+    test_df.to_csv("./model_results/{0}_secondary_test_dataset.csv".format(name), index=False)
+
     weights = model.logistic_layer.w.numpy()
     np.save('./trained_model/weights_secondary_{0}.npy'.format(name), weights)
 
 if __name__ == "__main__":
     name = "hide on bush".replace(" ", "-")
-    KFoldValidation(name)
-    #processor(name)
+    #KFoldValidation(name)
+    processor(name)

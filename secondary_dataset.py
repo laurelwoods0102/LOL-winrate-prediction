@@ -6,10 +6,10 @@ import tensorflow as tf
 from tensorflow import keras
 
 def average_dataset(name):
-    m = open("./dataset/dataset_{}_my_picks.json".format(name))
+    m = open("./dataset/dataset_{}_pick_history.json".format(name))
     my_picks = json.load(m)
 
-    average = [0 for i in range(145)]
+    average_table = [0 for i in range(145)]
     temp_win = [0 for i in range(145)]
     temp_total = [0 for i in range(145)]
 
@@ -20,12 +20,20 @@ def average_dataset(name):
 
     for i in range(145):
         if temp_total[i] != 0:
-            average[i] = temp_win[i]/temp_total[i]
+            average_table[i] = temp_win[i]/temp_total[i]
+
+    np_average_table = np.array([average_table], dtype='f4')
+    df_average_table = pd.DataFrame(np_average_table.T, columns=["average_table"])
+    df_average_table.to_csv("./dataset/secondary/dataset_{}_average_table.csv".format(name), index=False)
     
-    np_average = np.array([average], dtype='f4')
+    average = list()
+    for pick in my_picks:
+        average.append(average_table[pick[1]])
+
+    np_average = np.array([average])
     df_average = pd.DataFrame(np_average.T, columns=["average"])
     df_average.to_csv("./dataset/secondary/dataset_{}_average.csv".format(name), index=False)
-
+    
 
 class LogisticLayer(keras.layers.Layer):
     def __init__(self, weights):
@@ -73,5 +81,5 @@ def processor(name, model_type):
 
 if __name__ == "__main__":
     name = "hide on bush".replace(' ', '-')
-    processor(name, "enemy")
-    #average_dataset(name)
+    #processor(name, "enemy")
+    average_dataset(name)

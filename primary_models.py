@@ -80,9 +80,8 @@ def batch_accuracy(hypos, labels, batch_size=32):
 
 
 def KFoldValidation(name, model_type):
-    df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name, model_type))
+    df = pd.read_csv("./dataset/dataset_{0}_{1}.csv".format(name, model_type), dtype='float32')
     df = df.sample(frac=1).reset_index(drop=True)   # shuffle
-    df = df.astype('float32')
 
     batch_size = 32
 
